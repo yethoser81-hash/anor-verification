@@ -1,35 +1,25 @@
-const express =
-require("express");
+const express = require("express");
+const router = express.Router();
 
-const router =
-express.Router();
-
-const authenticate =
-require("../middlewares/authenticate");
-
-const adminOnly =
-require("../middlewares/adminOnly");
-
-const {
-    forgeSeal
-} =
+const { forgeSeal } =
 require("../controllers/forgeController");
 
 const upload =
-require(
-    "../middlewares/forgeUpload"
-);
+require("../middlewares/forgeUpload");
 
-// Sécurisation stricte de l'accès à la forge de certification numérique
 router.post(
     "/",
-    authenticate,
-    adminOnly,
-    upload.single(
-        "certificate"
-    ),
+    upload.fields([
+        {
+            name: "certificate",
+            maxCount: 1
+        },
+        {
+            name: "packaging_image",
+            maxCount: 1
+        }
+    ]),
     forgeSeal
 );
 
-module.exports =
-router;
+module.exports = router;

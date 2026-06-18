@@ -110,15 +110,11 @@ app.use(
 );
 
 // ==========================
-// ROOT
+// ROOT (MODIFIÉ TEMPORAIREMENT)
 // ==========================
 
 app.get("/", (req, res) => {
-
-    res.sendFile(
-        path.join(__dirname, "../admin/dashboard.html")
-    );
-
+    res.send("JE SUIS LE BON SERVEUR");
 });
 
 // ==========================

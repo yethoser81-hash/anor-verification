@@ -47,6 +47,12 @@ exports.forgeSeal = async (req, res) => {
 
     console.log("=== FORGE START ===");
 
+    console.log("BODY =", req.body);
+
+    console.log("FILE =", req.file);
+
+    console.log("FILES =", req.files);
+
     try {
 
         // Validation immédiate des données entrantes du formulaire
@@ -72,15 +78,12 @@ exports.forgeSeal = async (req, res) => {
         console.log("BODY RECU");
         console.log(req.body);
 
-        // Récupération de l'ID de l'agent ou de l'admin connecté pour la traçabilité de l'action
-        const adminId = req.user ? req.user.id : null;
-
-        // Extraction des fichiers reçus depuis les middlewares de gestion de fichiers
+        // MODIFICATION ICI : Réalignement des clés selon l'envoi du FormData frontend
         const certificateFile =
-        req.files?.certificateFile?.[0];
+        req.files?.certificate?.[0];
 
         const packagingImage =
-        req.files?.packagingImage?.[0];
+        req.files?.packaging_image?.[0];
 
         // --- RÉORGANISATION ICI : GÉNÉRATION ANTICIPÉE DES IDENTIFIANTS ---
         const sealID =
@@ -113,7 +116,7 @@ exports.forgeSeal = async (req, res) => {
 
             product_name,
             producer_name,
-            producer_email, // Ajout du champ email ici
+            producer_email, 
 
             technical_description,
             lot_number,
@@ -133,36 +136,36 @@ exports.forgeSeal = async (req, res) => {
 
         console.log("ETAPE 1 : INSERT PRODUCT");
 
-        const resultProduct = await supabase
-        .from("products")
-        .insert([{
-
+        // Construction de l'objet produit à insérer
+        const productData = {
             product_name,
             producer_name,
-            producer_email, // Ajout à l'insertion de la base de données
-            certificate_url: certificateUrl, // Liaison de l'URL du certificat uploadé
-            conformity_certificate_url: certificateUrl, // Ajout de la colonne native de ta table
-
+            producer_email, 
+            certificate_url: certificateUrl, 
+            conformity_certificate_url: certificateUrl, 
             technical_description,
-
             lot_number,
             standard_reference,
             origin_country,
-
             certificate_date,
             production_date,
             expiration_date,
-
             weight_volume,
             packaging_characteristics,
+            quantity_declared: quantity_declared || 1
+        };
 
-            quantity_declared:
-            quantity_declared || 1,
+        // On n'ajoute la colonne created_by que si req.user existe pour éviter d'envoyer null explicitement
+        if (req.user && req.user.id) {
+            productData.created_by = req.user.id;
+        }
 
-            // Liaison de sécurité optionnelle si ta table comporte un champ d'audit créateur
-            created_by: adminId
+        // AJOUT DU LOG DE L'INSTANCES SUPABASE
+        console.log("SUPABASE =", supabase);
 
-        }])
+        const resultProduct = await supabase
+        .from("products")
+        .insert([productData])
         .select()
         .single();
 
@@ -172,7 +175,7 @@ exports.forgeSeal = async (req, res) => {
         if (
             resultProduct.error
         ) {
-
+            console.log("PRODUCT ERROR =", resultProduct.error);
             throw resultProduct.error;
 
         }
@@ -216,7 +219,7 @@ exports.forgeSeal = async (req, res) => {
             "ETAPE 3 : GENERATION SVG"
         );
 
-        // Remplacement de l'appel pour inclure le baseName généré
+        // Remplacement de l'appel pour include le baseName généré
         const renderedSeal =
         await renderSeal(
             sealID,
@@ -267,7 +270,7 @@ exports.forgeSeal = async (req, res) => {
         if (
             resultSeal.error
         ) {
-
+            console.log("SEAL ERROR =", resultSeal.error);
             throw resultSeal.error;
 
         }
@@ -301,7 +304,7 @@ exports.forgeSeal = async (req, res) => {
         );
 
         if(packageInsert.error){
-
+            console.log("PACKAGE INSERT ERROR =", packageInsert.error);
             throw packageInsert.error;
 
         }

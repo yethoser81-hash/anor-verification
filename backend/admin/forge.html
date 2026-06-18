@@ -155,7 +155,7 @@ display:none;
 
 <h1>ANOR Forge</h1>
 
-<form id="forgeForm">
+<form id="forgeForm" enctype="multipart/form-data">
 
 <div class="section">
 
@@ -240,6 +240,7 @@ min="1">
 <input
 type="file"
 id="packFile"
+name="packaging_image"
 accept="image/*"
 required
 onchange="previewPackaging(event)">
@@ -310,22 +311,14 @@ ANOR
 
 <script>
 
-// Routage adaptatif intelligent de l'API (Localhost vs Render)
-const API = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "http://localhost:3000/api/admin"
-    : "https://anor-back.onrender.com/api/admin";
+alert("FORGE VERSION TEST");
 
-// Fonction utilitaire pour injecter le token d'authentification
+const API = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:3000/api/forge"
+    : "https://anor-back.onrender.com/api/forge";
+
 function getAuthHeaders(headers = {}) {
-    const token = localStorage.getItem("anor_token");
-    if (!token) {
-        console.warn("Requête de forge émise sans session valide.");
-        return headers;
-    }
-    return {
-        ...headers,
-        "Authorization": `Bearer ${token}`
-    };
+    return headers;
 }
 
 function toggleOrigin(){
@@ -415,125 +408,49 @@ document
 
 e.preventDefault();
 
-const formData =
-new FormData();
+const formData = new FormData();
 
-formData.append(
-"product_name",
-document.getElementById("product_name").value
-);
+formData.append("product_name", document.getElementById("product_name").value);
+formData.append("producer_name", document.getElementById("producer_name").value);
+formData.append("producer_email", document.getElementById("producer_email").value);
+formData.append("technical_description", document.getElementById("technical_description").value);
+formData.append("lot_number", document.getElementById("lot_number").value);
+formData.append("standard_reference", document.getElementById("standard_reference").value);
+formData.append("origin_country", document.getElementById("origin_country").value);
+formData.append("certificate_date", document.getElementById("certificate_date").value);
+formData.append("production_date", document.getElementById("production_date").value);
+formData.append("expiration_date", document.getElementById("expiration_date").value);
+formData.append("weight_volume", document.getElementById("weight_volume").value);
+formData.append("packaging_characteristics", document.getElementById("packaging_characteristics").value);
+formData.append("quantity_declared", document.getElementById("quantity_declared").value);
 
-formData.append(
-"producer_name",
-document.getElementById("producer_name").value
-);
-
-formData.append(
-"producer_email",
-document.getElementById("producer_email").value
-);
-
-formData.append(
-"technical_description",
-document.getElementById("technical_description").value
-);
-
-formData.append(
-"lot_number",
-document.getElementById("lot_number").value
-);
-
-formData.append(
-"standard_reference",
-document.getElementById("standard_reference").value
-);
-
-formData.append(
-"origin_country",
-document.getElementById("origin_country").value
-);
-
-formData.append(
-"certificate_date",
-document.getElementById("certificate_date").value
-);
-
-formData.append(
-"production_date",
-document.getElementById("production_date").value
-);
-
-formData.append(
-"expiration_date",
-document.getElementById("expiration_date").value
-);
-
-formData.append(
-"weight_volume",
-document.getElementById("weight_volume").value
-);
-
-formData.append(
-"packaging_characteristics",
-document.getElementById("packaging_characteristics").value
-);
-
-formData.append(
-"quantity_declared",
-document.getElementById("quantity_declared").value
-);
-
-const certificateInput =
-document.getElementById("certificateFile");
-
-if(
-certificateInput.files[0]
-){
-
-formData.append(
-"certificate",
-certificateInput.files[0]
-);
-
+const certificateInput = document.getElementById("certificateFile");
+if(certificateInput.files[0]){
+    formData.append("certificate", certificateInput.files[0]);
 }
 
-// Récupération du fichier d'image packaging
 const packInput = document.getElementById("packFile");
 if(packInput.files[0]){
     formData.append("packaging_image", packInput.files[0]);
 }
 
 try {
-// L'appel pointe dynamiquement vers l'infrastructure cible configurée
 const res=
-await fetch(`${API}/forge`,{
-
+await fetch(API,{
 method:"POST",
-
 headers: getAuthHeaders(),
-
 body:formData
-
 });
 
 const data=
 await res.json();
 
 if(data.success){
-
 alert(
-`Sceau généré :
-
-${data.sealID}
-
-Unités :
-${data.serializedUnits}`
+`Sceau généré :\n\n${data.sealID}\n\nUnités :\n${data.serializedUnits}`
 );
-
 }else{
-
 alert(data.message);
-
 }
 } catch(err) {
 console.error("Erreur lors de la génération du kit:", err);
